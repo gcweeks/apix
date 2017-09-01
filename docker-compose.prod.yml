@@ -10,10 +10,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - nginx/conf.d:/etc/nginx/conf.d
-      - nginx/vhost.d:/etc/nginx/vhost.d
-      - nginx/html:/usr/share/nginx/html
-      - nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/vhost.d:/etc/nginx/vhost.d
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/certs:/etc/nginx/certs:ro
 
   nginx-gen:
     image: jwilder/docker-gen
@@ -21,11 +21,11 @@ services:
     container_name: nginx-gen
     restart: unless-stopped
     volumes:
-      - nginx/conf.d:/etc/nginx/conf.d
-      - nginx/vhost.d:/etc/nginx/vhost.d
-      - nginx/html:/usr/share/nginx/html
-      - nginx/certs:/etc/nginx/certs:ro
-      - nginx/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/vhost.d:/etc/nginx/vhost.d
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
 
   nginx-letsencrypt:
@@ -33,10 +33,10 @@ services:
     container_name: nginx-letsencrypt
     restart: unless-stopped
     volumes:
-      - nginx/conf.d:/etc/nginx/conf.d
-      - nginx/vhost.d:/etc/nginx/vhost.d
-      - nginx/html:/usr/share/nginx/html
-      - nginx/certs:/etc/nginx/certs:rw
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/vhost.d:/etc/nginx/vhost.d
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/certs:/etc/nginx/certs:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       NGINX_DOCKER_GEN_CONTAINER: "nginx-gen"
