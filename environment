@@ -1,0 +1,9 @@
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+VISUAL=vim
+EDITOR=vim
+RDS_DB_NAME=apix_production
+RDS_USERNAME=apix
+RDS_PASSWORD=789789
+RDS_HOSTNAME=localhost
+RDS_PORT=5432
+SECRET_KEY_BASE=70f5e296671ca824ee74324c58cbbcce2f84211b106d23dd655ea9bc31f9a54fa1c2c402bb77caeb9db22f332a8f0f24d089891bf6ee8aba88889324a7101a25

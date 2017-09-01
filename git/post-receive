@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/home/git/scripts/post-receive.sh
+# /home/git/scripts/git-slack-hook

@@ -1,0 +1,11 @@
+title:
+  key: 'title'
+  value_type: 'string'
+
+year:
+  key: 'year'
+  value_type: 'integer'
+
+name:
+  key: 'name'
+  value_type: 'string'

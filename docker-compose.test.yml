@@ -1,0 +1,27 @@
+version: "3"
+services:
+  web:
+    build: .
+    command: bash -c "./wait-for-it.sh neo4j-test:7474 -- bundle exec rails t"
+    volumes:
+      - ./app:/app
+    links:
+      - postgres
+      - neo4j-test
+    environment:
+      RDS_DB_NAME: apixdb
+      RDS_USERNAME: apix
+      RDS_PASSWORD: 789789
+      RDS_HOSTNAME: postgres
+      RDS_PORT: 5432
+
+  postgres:
+    image: postgres:9.6-alpine
+    environment:
+      POSTGRES_USER: apix
+      POSTGRES_DB: apixdb
+
+  neo4j-test:
+    image: neo4j:3.2
+    environment:
+      NEO4J_AUTH: none
