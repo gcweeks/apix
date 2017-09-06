@@ -14,6 +14,8 @@ services:
       - ./nginx/vhost.d:/etc/nginx/vhost.d
       - ./nginx/html:/usr/share/nginx/html
       - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - proxy-tier
 
   nginx-gen:
     image: jwilder/docker-gen
@@ -41,6 +43,8 @@ services:
     environment:
       NGINX_DOCKER_GEN_CONTAINER: "nginx-gen"
       NGINX_PROXY_CONTAINER: "nginx"
+      ACME_CA_URI: "https://acme-staging.api.letsencrypt.org/directory"
+      DEBUG: "true"
 
   web:
     build: .
@@ -65,15 +69,21 @@ services:
 
   postgres:
     image: postgres:9.6-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: apix
       POSTGRES_DB: apixdb
+    networks:
+      - proxy-tier
 
   neo4j:
     image: neo4j:3.2
+    restart: unless-stopped
     environment:
       NEO4J_AUTH: none
       RDS_PORT: 5432
+    networks:
+      - proxy-tier
 
 networks:
   proxy-tier:

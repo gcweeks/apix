@@ -17,11 +17,13 @@ services:
 
   postgres:
     image: postgres:9.6-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: apix
       POSTGRES_DB: apixdb
 
   neo4j-test:
     image: neo4j:3.2
+    restart: unless-stopped
     environment:
       NEO4J_AUTH: none

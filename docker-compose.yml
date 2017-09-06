@@ -6,7 +6,7 @@ services:
     volumes:
       - ./app:/app
     ports:
-      - "3000:3000"
+      - "80:3000"
     links:
       - postgres
       - neo4j
@@ -19,11 +19,13 @@ services:
 
   postgres:
     image: postgres:9.6-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: apix
       POSTGRES_DB: apixdb
 
   neo4j:
     image: neo4j:3.2
+    restart: unless-stopped
     environment:
       NEO4J_AUTH: none
