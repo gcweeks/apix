@@ -14,8 +14,6 @@ services:
       - ./nginx/vhost.d:/etc/nginx/vhost.d
       - ./nginx/html:/usr/share/nginx/html
       - ./nginx/certs:/etc/nginx/certs:ro
-    networks:
-      - proxy-tier
 
   nginx-gen:
     image: jwilder/docker-gen
@@ -43,12 +41,14 @@ services:
     environment:
       NGINX_DOCKER_GEN_CONTAINER: "nginx-gen"
       NGINX_PROXY_CONTAINER: "nginx"
-      ACME_CA_URI: "https://acme-staging.api.letsencrypt.org/directory"
-      DEBUG: "true"
+#      ACME_CA_URI: "https://acme-staging.api.letsencrypt.org/directory"
+#      DEBUG: "true"
 
   web:
     build: .
     command: bash -c "./wait-for-it.sh neo4j:7474 -- bundle exec rails s"
+    ports:
+      - "3000:3000"
     volumes:
       - ./app:/app
     links:
@@ -59,13 +59,13 @@ services:
       RDS_USERNAME: apix
       RDS_PASSWORD: 789789
       RDS_HOSTNAME: postgres
+      RAILS_ENV: production
       VIRTUAL_HOST: apix.rocks
       VIRTUAL_NETWORK: nginx-proxy
       VIRTUAL_PORT: 3000
       LETSENCRYPT_HOST: apix.rocks
       LETSENCRYPT_EMAIL: cliqqit@gmail.com
-    networks:
-      - proxy-tier
+      SECRET_KEY_BASE: 70f5e296671ca824ee74324c58cbbcce2f84211b106d23dd655ea9bc31f9a54fa1c2c402bb77caeb9db22f332a8f0f24d089891bf6ee8aba88889324a7101a25
 
   postgres:
     image: postgres:9.6-alpine
@@ -73,8 +73,6 @@ services:
     environment:
       POSTGRES_USER: apix
       POSTGRES_DB: apixdb
-    networks:
-      - proxy-tier
 
   neo4j:
     image: neo4j:3.2
@@ -82,10 +80,3 @@ services:
     environment:
       NEO4J_AUTH: none
       RDS_PORT: 5432
-    networks:
-      - proxy-tier
-
-networks:
-  proxy-tier:
-    external:
-      name: nginx-proxy
