@@ -4,7 +4,7 @@ class ApiController < ApplicationController
   include CypherHelper
 
   def version
-    render json: { 'version' => '0.0.9' }, status: :ok
+    render json: { 'version' => '0.1.0' }, status: :ok
   end
 
   def request_get

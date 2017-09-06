@@ -26,7 +26,7 @@ apt -y autoremove
 cat environment > /etc/environment; rm environment
 adduser $UNAME; adduser git
 echo "$UNAME ALL=(ALL:ALL) ALL" >> /etc/sudoers
-echo "git ALL=($UNAME) NOPASSWD: /usr/bin/git" >> /etc/sudoers
+echo "git ALL=($UNAME) NOPASSWD: /usr/bin/git, /usr/local/bin/docker-compose" >> /etc/sudoers
 # ufw app list
 # ufw status
 # ufw allow OpenSSH
