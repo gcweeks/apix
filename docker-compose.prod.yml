@@ -14,10 +14,11 @@ services:
       - ./nginx/vhost.d:/etc/nginx/vhost.d
       - ./nginx/html:/usr/share/nginx/html
       - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - web
 
   nginx-gen:
     image: jwilder/docker-gen
-    command: -notify-sighup nginx -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
     container_name: nginx-gen
     restart: unless-stopped
     volumes:
@@ -27,6 +28,10 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro
       - ./nginx/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
+    entrypoint: /bin/sh -c
+    command: ["/usr/local/bin/docker-gen -notify-sighup nginx -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf"]
+    depends_on:
+      - web
 
   nginx-letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
