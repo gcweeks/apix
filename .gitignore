@@ -1,0 +1,6 @@
+# Nginx
+nginx/certs/
+nginx/conf.d/
+nginx/html/
+nginx/vhost.d/
+
