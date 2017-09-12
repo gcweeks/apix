@@ -67,6 +67,8 @@ wait_for_wrapper()
     return $RESULT
 }
 
+rm tmp/pids/server.pid 2> /dev/null
+
 # process arguments
 while [[ $# -gt 0 ]]
 do
