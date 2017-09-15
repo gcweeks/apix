@@ -159,7 +159,7 @@ module CypherHelper
       value = TemplateHelper.format_type(value, prop_types[key])
       cypher_str += 'r.' + key + ' = ' + value + ', '
     end
-    cypher_str.chomp!(', ')
+    cypher_str.chomp!(', ') unless properties.blank?
 
     query.set(cypher_str)
   end

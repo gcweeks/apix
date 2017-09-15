@@ -140,7 +140,6 @@ module ApiHelper
   end
 
   def set_relationship(direction, query, node, rel, props)
-    return query if props.blank? || !props.respond_to?('each')
     rel_type = rel.rel_type.to_s
     if direction == :in
       rel_template = node.in_relationships.find_by(rel_type: rel_type)
@@ -149,10 +148,12 @@ module ApiHelper
       rel_template = node.out_relationships.find_by(rel_type: rel_type)
       other_nid = rel.end_node_neo_id
     end
-    props = props.to_unsafe_h
-    props = TemplateHelper.validate_props(props, rel_template)
-    prop_types = TemplateHelper.get_prop_types(props, rel_template)
-    props.each { |k, v| props[k] = v.to_s }
+    if !props.blank? && props.respond_to?('each')
+      props = props.to_unsafe_h
+      props = TemplateHelper.validate_props(props, rel_template)
+      prop_types = TemplateHelper.get_prop_types(props, rel_template)
+      props.each { |k, v| props[k] = v.to_s }
+    end
     CypherHelper.add_set_relationship(direction, query, rel_type, other_nid,
                                       props, prop_types)
   end
