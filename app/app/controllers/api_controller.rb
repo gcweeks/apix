@@ -4,7 +4,7 @@ class ApiController < ApplicationController
   include CypherHelper
 
   def version
-    render json: { 'version' => '0.1.0' }, status: :ok
+    render json: { 'version' => '0.1.1' }, status: :ok
   end
 
   def request_get
@@ -71,16 +71,20 @@ class ApiController < ApplicationController
   end
 
   def show
-    query = CypherHelper.get_node(params[:id])
+    node_id = params[:id].to_i.to_s
+    raise BadRequest.new(id: 'invalid') if node_id != params[:id]
+    query = CypherHelper.get_node(node_id)
     node_struct = CypherHelper.add_relationships(query).return(:n, :r).first
     raise NotFound if node_struct.nil?
     render json: format_node(node_struct), status: :ok
   end
 
   def update
+    node_id = params[:id].to_i.to_s
+    raise BadRequest.new(id: 'invalid') if node_id != params[:id]
     node = Node.find_by(label: params[:node_label])
     raise NotFound if node.nil?
-    query = CypherHelper.get_node(params[:id])
+    query = CypherHelper.get_node(node_id)
     node_instance = query.return(:n).first
     raise NotFound if node_instance.nil?
 
@@ -95,7 +99,7 @@ class ApiController < ApplicationController
     prop_types = TemplateHelper.get_prop_types(props, node)
     props.each { |k, v| props[k] = v.to_s }
     # Start building SET query
-    query = CypherHelper.set_node(params[:id], props, prop_types)
+    query = CypherHelper.set_node(node_id, props, prop_types)
 
     # Relationships
     rel = params[:relationships]
@@ -110,9 +114,11 @@ class ApiController < ApplicationController
   end
 
   def destroy
+    node_id = params[:id].to_i.to_s
+    raise BadRequest.new(id: 'invalid') if node_id != params[:id]
     node = Node.find_by(label: params[:node_label])
     raise NotFound if node.nil?
-    query = CypherHelper.get_node(params[:id])
+    query = CypherHelper.get_node(node_id)
     node_instance = query.return(:n).first
     raise NotFound if node_instance.nil?
     rel = params[:relationships]
@@ -123,7 +129,7 @@ class ApiController < ApplicationController
     if props.empty?
       if rel.blank? || (rel[:in].blank? && rel[:out].blank?)
         # Start building DELETE query
-        query = CypherHelper.delete_node(params[:id])
+        query = CypherHelper.delete_node(node_id)
         return head :ok if query.exec
         raise InternalServerError
       end
@@ -136,7 +142,7 @@ class ApiController < ApplicationController
           raise BadRequest.new(property: 'does not exist (' + key.to_s + ')')
         end
       end
-      query = CypherHelper.remove_node_props(params[:id], props)
+      query = CypherHelper.remove_node_props(node_id, props)
     end
 
     # Relationships
