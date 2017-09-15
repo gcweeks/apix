@@ -4,3 +4,10 @@ nginx/conf.d/
 nginx/html/
 nginx/vhost.d/
 
+# Mac
+.DS_Store
+
+# Vagrant
+.vagrant/
+preload-images/
+

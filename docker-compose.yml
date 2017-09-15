@@ -16,6 +16,8 @@ services:
       RDS_PASSWORD: 789789
       RDS_HOSTNAME: postgres
       RDS_PORT: 5432
+    stdin_open: true
+    tty: true
 
   postgres:
     image: postgres:9.6-alpine
