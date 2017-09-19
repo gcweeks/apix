@@ -11,3 +11,5 @@ nginx/vhost.d/
 .vagrant/
 preload-images/
 
+dbdump/
+
