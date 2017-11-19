@@ -201,6 +201,7 @@ Vagrant.configure("2") do |config|
      echo "To ssh into the box:"
      echo " "
      echo "  vagrant ssh"
+     echo "  tcuser"
      echo "  cd /vagrant"
 
      # Finally, and importantly, stop all running dhcp clients; this box is
