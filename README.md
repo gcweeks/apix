@@ -19,7 +19,7 @@ This repository is structured as follows:
 
 There are two ways to setup the application: Using **Vagrant** and the provided Vagrant files (recommended), or **manually** by setting up your local environment with everything needed to run the app including Rails, Postgres, and Neo4j.
 
-##Vagrant
+## Vagrant
 
 Install the following tools:
 
@@ -59,7 +59,7 @@ When you're ready to stop the server, type:
 
 ```vagrant halt```
 
-##Manual Method
+## Manual Method
 
 If you don't want to use Vagrant, you can set up your local environment with everything needed to run the app including Rails, Postgres, and Neo4j.
 
