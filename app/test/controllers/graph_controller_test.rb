@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class ApiControllerTest < ActionDispatch::IntegrationTest
+class GraphControllerTest < ActionDispatch::IntegrationTest
   setup do
     book = nodes(:book)
     book.properties << node_properties(:title)

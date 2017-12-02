@@ -6,12 +6,12 @@ Rails.application.routes.draw do
 
   scope 'x' do
     scope ':node_label' do
-      get    '/'       => 'api#index'
-      post   '/'       => 'api#create'
-      post   '/search' => 'api#search'
-      get    '/:id'    => 'api#show'
-      put    '/:id'    => 'api#update'
-      delete '/:id'    => 'api#destroy'
+      get    '/'       => 'graph#index'
+      post   '/'       => 'graph#create'
+      post   '/search' => 'graph#search'
+      get    '/:id'    => 'graph#show'
+      put    '/:id'    => 'graph#update'
+      delete '/:id'    => 'graph#destroy'
     end
   end
 
