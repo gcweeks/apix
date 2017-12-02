@@ -85,6 +85,10 @@ Vagrant.configure("2") do |config|
     #vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
   #end
 
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 4096
+    v.cpus = 4
+  end
 
   # This provisioner runs on the first `vagrant up`.
   config.vm.provision "install", type: "shell", inline: <<-SHELL
@@ -128,6 +132,12 @@ Vagrant.configure("2") do |config|
      # pulls any images not preloaded)
      cd /vagrant
      docker-compose up -d
+     # Setup postgres db
+     if ! docker-compose exec -T web rails db:exists; then
+       echo "First launch, creating database..."
+       sleep 10s # Wait for postgres to finish initializing
+       docker-compose exec -T web rails db:setup
+     fi
 
      # Update the preload image directory with any new (or changed) images
      if mount | grep /preload-images 1>/dev/null; then

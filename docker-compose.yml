@@ -2,7 +2,7 @@ version: "3"
 services:
   web:
     build: .
-    command: bash -c "./wait-for-it.sh neo4j:7474 -- bundle exec rails s"
+    command: bash -c "./wait-for-it.sh neo4j:7474 -- bundle install; bundle exec rails s"
     volumes:
       - ./app:/app
     ports:
