@@ -1,0 +1,4 @@
+#!/bin/bash
+
+vagrant ssh -c 'cd /vagrant; sh test.sh'
+

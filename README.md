@@ -49,7 +49,7 @@ As the prompt says, you can ssh into the Vagrant VM (the machine running the doc
 
 ```vagrant ssh```
 
-Once you open the ssh connection, it will prompt you for a password, which is listed in the next line of the original prompt (`tcuser`). Once logged in, change to the `/vagrant` directory and you will find all of the server files mapped from the host.
+If you are restoring the VM from a `vagrant halt` rather than running it for the first, the VM will prompt you for a password, which is `tcuser` (as listed at the end of the `vagrant up` output). Once logged in, change to the `/vagrant` directory and you will find all of the server files mapped from the host.
 
 Server files can also be modified outside of Vagrant. To modify any of the server files, simply make the local modifications and Rails should automatically pick up the changes. If Rails doesn't pick up a change (i.e. a lower-level changes that requires a server restart), you can reload the Vagrant environment at any time using:
 
