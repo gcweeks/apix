@@ -5,6 +5,7 @@ class CreateUser < ActiveRecord::Migration[5.0]
       t.string   :lname
       t.string   :token
       t.string   :email, default: '', null: false
+      t.string   :password_digest, default: '', null: false
 
       t.timestamps null: false
 

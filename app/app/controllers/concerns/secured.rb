@@ -16,11 +16,11 @@ module Secured
   def authenticate_request!
     if request.headers['Auth0'].present?
       @auth_payload, @auth_header = auth_token
-      # render json: { errors: @auth_payload }, status: :unauthorized unless scope_included
+      render json: { errors: auth_token }, status: :unauthorized #unless scope_included
     elsif request.headers['Authorization'].present?
       # TODO
     else
-      render json: { errors: ['Not Authenticated'] }, status: :unauthorized
+      render json: { errors: ['NA'] }, status: :unauthorized
     end
   rescue JWT::VerificationError, JWT::DecodeError
     render json: { errors: ['Not Authenticated'] }, status: :unauthorized
