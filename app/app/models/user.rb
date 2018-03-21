@@ -7,9 +7,11 @@ class User < ApplicationRecord
   # (?=.*[[:^alnum:]]) # Must contain a symbol
   /x
 
+  has_many :repos
   has_secure_password
 
   # Validations
+  validates :username, presence: true, uniqueness: true
   validates :email, presence: true, uniqueness: true, format: {
     with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
   }
@@ -26,7 +28,7 @@ class User < ApplicationRecord
       except: [:token, :password_digest, :created_at, :updated_at]
     }.merge(options))
     # Manually call as_json (implicitly) for fields that are models
-    # json['address'] = address
+    json['repos'] = repos
     json
   end
 

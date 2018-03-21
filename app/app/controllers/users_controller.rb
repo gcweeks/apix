@@ -26,6 +26,11 @@ class UsersController < ApplicationController
     render json: @authed_user, status: :ok
   end
 
+  # GET /usrs/me/repos
+  def get_repos
+    render json: @authed_user.repos, status: :ok
+  end
+
   def support
     # # Validate payload
     # unless params[:text]
@@ -64,6 +69,6 @@ class UsersController < ApplicationController
   private
 
   def user_params
-    params.require(:user).permit(:fname, :lname, :password, :email)
+    params.require(:user).permit(:username, :email, :password, :fname, :lname)
   end
 end

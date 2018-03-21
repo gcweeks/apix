@@ -32,18 +32,23 @@ class ApiController < ApplicationController
       raise BadRequest.new(errors)
     end
     if params[:user].blank?
-      errors = { email: ['cannot be blank'], password: ['cannot be blank'] }
+      errors = {
+        username: ['cannot be blank'],
+        password: ['cannot be blank']
+      }
       raise BadRequest.new(errors)
     end
-    if params[:user][:email].blank?
-      errors = { email: ['cannot be blank'] }
-      raise BadRequest.new(errors)
+
+    errors = {}
+    if params[:user][:username].blank?
+      (errors[:username] ||= []).push('cannot be blank')
     end
     if params[:user][:password].blank?
-      errors = { password: ['cannot be blank'] }
-      raise BadRequest.new(errors)
+      (errors[:password] ||= []).push('cannot be blank')
     end
-    user = User.find_by(email: params[:user][:email])
+    raise BadRequest.new(errors) if errors.present?
+
+    user = User.find_by(username: params[:user][:username])
     return head :not_found unless user
     # # Log this authentication event
     # ip_addr = IPAddr.new(request.remote_ip)

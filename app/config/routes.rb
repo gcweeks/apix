@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   root 'api#version'
   resources :users, only: [:create]
+  resources :repos, only: [:create, :show] # TODO :update, :destroy
 
   get  'test' => 'api#request_get'
   post 'test' => 'api#request_post'
@@ -35,9 +36,10 @@ Rails.application.routes.draw do
   # Model-specific calls (other than those created by resources)
   scope 'users' do
     scope 'me' do
-      get    '/'                        => 'users#get_me'
-      put    '/'                        => 'users#update_me'
-      post   'support'                  => 'users#support'
+      get  '/'       => 'users#get_me'
+      put  '/'       => 'users#update_me'
+      get  'repos'   => 'users#get_repos'
+      post 'support' => 'users#support'
     end
   end
 end
