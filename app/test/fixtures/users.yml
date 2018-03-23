@@ -1,0 +1,11 @@
+lynx:
+  fname:    'Lynx'
+  lname:    'List'
+  username: 'linxie'
+  email:    'lynx@gmail.com'
+
+dolphin:
+  fname:    'Dol'
+  lname:    'Phin'
+  username: 'dolphin'
+  email:    'dolphin@gmail.com'

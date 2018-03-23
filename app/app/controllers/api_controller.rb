@@ -4,19 +4,22 @@ class ApiController < ApplicationController
   # include CypherHelper
   # include Secured
 
+  # GET /
   def version
     render json: { 'version' => '0.1.2' }, status: :ok
   end
 
+  # GET /test
   def request_get
     render json: { 'body' => 'GET Request' }, status: :ok
   end
 
+  # POST /test
   def request_post
-    render json: { 'body' => "POST Request:\n\n#{request.body.read}\n" },
-           status: :ok
+    render json: { 'body' => "POST Request: #{request.body.read}" }, status: :ok
   end
 
+  # GET /auth
   def auth
     # Alternative to users_get call that returns the User token in addition to
     # the rest of the model, provided proper authentication is given.

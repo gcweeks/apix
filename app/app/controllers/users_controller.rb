@@ -71,4 +71,9 @@ class UsersController < ApplicationController
   def user_params
     params.require(:user).permit(:username, :email, :password, :fname, :lname)
   end
+
+  def user_update_params
+    # No :username or :email
+    params.require(:user).permit(:fname, :lname, :password)
+  end
 end
