@@ -39,8 +39,10 @@ module TemplateHelper
       errors = { related_node: 'does not exist (' + rel.rel_type + ')' }
       raise BadRequest.new(errors)
     end
-    label = (direction == :in) ? rel.from_node.label : rel.to_node.label
-    return if related_node.n.labels.include?(label.to_sym)
+    node_template = direction == :in ? rel.from_node : rel.to_node
+    label = node_template.label
+    scoped_label = node_template.scoped_label
+    return if related_node.n.labels.include?(scoped_label.to_sym)
     raise BadRequest.new(related_node: 'invalid label (' + label + ')')
   end
 
@@ -113,7 +115,16 @@ module TemplateHelper
   end
 
   def self.format_node_props(props, label)
-    node_template = Node.find_by(label: label)
+    label = label.to_s.tr('`', '')
+    username, label = label.split('/')
+    repo_name, label = label.split(':')
+    user = User.find_by(username: username)
+    raise InternalServerError if user.blank?
+    # Repo name is already downcased in Neo4j, but not in SQL
+    repo = user.repos.where('lower(name) = ?', repo_name).take
+    raise InternalServerError if repo.blank?
+    node_template = repo.nodes.find_by(label: label)
+    raise InternalServerError if node_template.blank?
     props.each do |key, value|
       prop_template = node_template.properties.find_by(key: key)
       next if @neo4j_primitives.include?(prop_template.value_type)

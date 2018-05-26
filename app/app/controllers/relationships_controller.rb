@@ -3,11 +3,21 @@ class RelationshipsController < ApplicationController
   include ErrorHelper
   include TemplateHelper
 
+  before_action :restrict_access, only: %i(create update destroy)
+  before_action :assign_repo, only: %i(index create)
+
+  # GET /users/:user_name/repos/:repo_name/relationships
+  def index
+    # TODO, and assign_repo scope
+    render json: { 'status' => 'Not implemented' }, status: :ok
+  end
+
+  # POST /users/:user_name/repos/:repo_name/relationships
   def create
     rel = Relationship.new(rel_type: params[:rel_type])
-    to = Node.find_by(id: params[:to])
+    to = @repo.nodes.find_by(id: params[:to])
     raise BadRequest.new(to: 'does not exist') if to.nil?
-    from = Node.find_by(id: params[:from])
+    from = @repo.nodes.find_by(id: params[:from])
     raise BadRequest.new(from: 'does not exist') if from.nil?
     rel.to_node = to
     rel.from_node = from
@@ -33,18 +43,20 @@ class RelationshipsController < ApplicationController
     render json: rel, status: :created
   end
 
+  # GET /users/:user_name/repos/:repo_name/relationships
   def show
     rel = Relationship.find_by(id: params[:id])
     raise NotFound if rel.nil?
     render json: rel, status: :ok
   end
 
+  # PATCH/PUT /users/:user_name/repos/:repo_name/relationships/:id
   def update
     rel = Relationship.find_by(id: params[:id])
     raise NotFound if rel.nil?
 
-    query = CypherHelper.relationship_query(rel.from_node.label,
-                                            rel.to_node.label,
+    query = CypherHelper.relationship_query(rel.from_node.scoped_label,
+                                            rel.to_node.scoped_label,
                                             rel.rel_type)
     # Keep track of if we need to execute this query
     needs_query = false
@@ -84,14 +96,14 @@ class RelationshipsController < ApplicationController
     render json: rel, status: :ok
   end
 
+  # DELETE /users/:user_name/repos/:repo_name/relationships/:id
   def destroy
     rel = Relationship.find_by(id: params[:id])
     raise NotFound if rel.nil?
 
-    query = CypherHelper.relationship_query(rel.from_node.label,
-                                            rel.to_node.label,
+    query = CypherHelper.relationship_query(rel.from_node.scoped_label,
+                                            rel.to_node.scoped_label,
                                             rel.rel_type)
-
     # Destroy all instances. This call will also destroy the template itself
     # when done.
     rel.destroy_instances(query).exec

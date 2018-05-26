@@ -26,6 +26,8 @@ class UserTest < ActiveSupport::TestCase
     username = user.username
     user.username = nil
     assert_not user.save, 'Saved User without username'
+    user.username = 'bad!username'
+    assert_not user.save, 'Saved User with invalid character'
     user.username = username
     new_user = User.new(fname: user.fname, lname: user.lname,
                         username: user.username, email: 'another@email.com',

@@ -6,7 +6,7 @@ class ApiController < ApplicationController
 
   # GET /
   def version
-    render json: { 'version' => '0.1.2' }, status: :ok
+    render json: { 'version' => '0.2.0' }, status: :ok
   end
 
   # GET /test
@@ -72,6 +72,58 @@ class ApiController < ApplicationController
       # Save and check for validation errors
       raise UnprocessableEntity.new(user.errors) unless user.save
     end
+    # Send User model with token
+    render json: user.with_token, status: :ok
+  end
+
+  def support
+    # # Validate payload
+    # unless params[:text]
+    #   errors = { text: ['is required'] }
+    #   raise BadRequest.new(errors)
+    # end
+    # unless params[:text].length <= 1000
+    #   errors = { text: ['must be 1000 characters or less'] }
+    #   raise BadRequest.new(errors)
+    # end
+
+    # # Build text
+    # text = '```' + params[:text] + '```' + "\n"
+    # text += 'FROM: ' + @authed_user.email
+
+    # # Build HTTPS request
+    # slack_key = ENV['SLACK_ROUTE']
+    # url = URI.parse('https://hooks.slack.com/services/' + slack_key)
+    # http = Net::HTTP.new(url.host, url.port)
+    # http.use_ssl = true
+    # req = Net::HTTP::Post.new(url.to_s)
+    # req['Content-Type'] = 'application/json'
+    # req.body = {
+    #   'text' => text
+    # }.to_json
+
+    # # Send Slack message
+    # res = http.request(req)
+
+    # # Log response in case of issues
+    # logger.info res
+
+    head :ok
+  end
+
+  # POST /reset
+  def reset
+    Node.all.each(&:destroy)
+    NodeProperty.all.each(&:destroy)
+    Relationship.all.each(&:destroy)
+    RelationshipProperty.all.each(&:destroy)
+    Repo.all.each(&:destroy)
+    User.all.each(&:destroy)
+    # Create new User
+    user = User.new(username: 'gweeks', fname: 'Chris', lname: 'Weeks',
+                    email: 'chris@apix.rocks', password: 'itsasecret')
+    user.generate_token
+    raise UnprocessableEntity.new(user.errors) unless user.save
     # Send User model with token
     render json: user.with_token, status: :ok
   end

@@ -1,45 +1,33 @@
 Rails.application.routes.draw do
   root 'api#version'
-  resources :users, only: [:create]
-  resources :repos, only: [:create, :show] # TODO :update, :destroy
 
-  get  'test' => 'api#request_get'
-  post 'test' => 'api#request_post'
-  get  'auth' => 'api#auth'
+  get  'test'    => 'api#request_get'
+  post 'test'    => 'api#request_post'
+  get  'auth'    => 'api#auth'
+  post 'support' => 'api#support'
+  post 'reset'   => 'api#reset'
 
   scope 'x' do
-    scope ':node_label' do
-      get    '/'       => 'graph#index'
-      post   '/'       => 'graph#create'
-      post   '/search' => 'graph#search'
-      get    '/:id'    => 'graph#show'
-      put    '/:id'    => 'graph#update'
-      delete '/:id'    => 'graph#destroy'
+    scope ':user_name' do
+      scope ':repo_name' do
+        scope ':node_label' do
+          get    '/'       => 'graph#index'
+          post   '/'       => 'graph#create'
+          post   '/search' => 'graph#search'
+          get    '/:id'    => 'graph#show'
+          put    '/:id'    => 'graph#update'
+          delete '/:id'    => 'graph#destroy'
+        end
+      end
     end
   end
 
-  scope 'nodes' do
-    get    '/'    => 'nodes#index'
-    post   '/'    => 'nodes#create'
-    get    '/:id' => 'nodes#show'
-    put    '/:id' => 'nodes#update'
-    delete '/:id' => 'nodes#destroy'
-  end
-
-  scope 'relationships' do
-    post   '/'    => 'relationships#create'
-    get    '/:id' => 'relationships#show'
-    put    '/:id' => 'relationships#update'
-    delete '/:id' => 'relationships#destroy'
-  end
-
-  # Model-specific calls (other than those created by resources)
-  scope 'users' do
-    scope 'me' do
-      get  '/'       => 'users#get_me'
-      put  '/'       => 'users#update_me'
-      get  'repos'   => 'users#get_repos'
-      post 'support' => 'users#support'
+  get 'me' => 'users#show_me'
+  put 'me' => 'users#update_me'
+  resources :users, except: %i(index), param: :name do
+    resources :repos, param: :name do
+      resources :nodes
+      resources :relationships
     end
   end
 end

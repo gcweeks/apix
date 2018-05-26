@@ -2,11 +2,21 @@ require 'test_helper'
 
 class GraphControllerTest < ActionDispatch::IntegrationTest
   setup do
+    @user = users(:lynx)
+    @user.password = 'SecurePa55word'
+    @user.generate_token
+    @user.save!
+    @headers = { 'Authorization' => @user.token }
+    @repo = repos(:bookdb)
+    @repo.user = @user
+    @repo.save!
     book = nodes(:book)
+    book.repo = @repo
     book.properties << node_properties(:title)
     book.properties << node_properties(:year)
     book.save!
     author = nodes(:author)
+    author.repo = @repo
     author.properties << node_properties(:name)
     author.save!
     wrote_rel = relationships(:wrote)
@@ -22,16 +32,16 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
 
   test 'should get all nodes for label' do
     # Create Author
-    post '/x/author', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/author', params: {
       properties: { name: 'Jon' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jon', res['properties']['name']
-    assert_equal 'author', res['label']
+    assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':author', res['label']
     author_nid = res['nid']
     # Create Books
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Jungle Book',
         year: 1984
@@ -49,7 +59,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
       } # relationships
     } # params
     assert_response :success
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Hamlet',
         year: 1600
@@ -69,12 +79,12 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     # Get all books
-    get '/x/book'
-    res = JSON.parse(@response.body)
+    get '/x/' + @user.username + '/' + @repo.name + '/book'
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 2, res.count
     res.each do |node|
-      assert_equal 'book', node['label']
+      assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':book', node['label']
       assert_equal 1, node['relationships'].size
       rel = node['relationships'][0]
       assert_equal 'lead', rel['properties']['role']
@@ -86,24 +96,24 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
 
   test 'should create node' do
     # Can't create without properties
-    post '/x/author'
+    post '/x/' + @user.username + '/' + @repo.name + '/author'
     assert_response :bad_request
 
     # Create proper Author
-    post '/x/author', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/author', params: {
       properties: { name: 'Jon' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jon', res['properties']['name']
-    assert_equal 'author', res['label']
+    assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':author', res['label']
     author_nid = res['nid']
     # Can't create with nonexistent properties
-    post '/x/author', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/author', params: {
       properties: { invalid: 'property' }
     }
     assert_response :bad_request
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Hamlet',
         year: 1600
@@ -117,7 +127,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
       }
     }
     assert_response :bad_request
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Hamlet',
         year: 1600
@@ -132,7 +142,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
       }
     }
     assert_response :bad_request
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Hamlet',
         year: 1600
@@ -147,7 +157,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
       }
     }
     assert_response :bad_request
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Hamlet',
         year: 1600
@@ -166,7 +176,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     } # params
     assert_response :bad_request
     # Create proper Book
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Hamlet',
         year: 1600
@@ -183,15 +193,16 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Hamlet', res['properties']['title']
     assert_equal 1600, res['properties']['year']
-    assert_equal 'book', res['label']
+    assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':book', res['label']
 
     # Verify that data was stored
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Hamlet' })
                     .return(:a, :b).first
     author = query&.a
@@ -210,7 +221,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_equal book.neo_id, author.rels[0].end_node_neo_id
 
     # Complex properties
-    post '/nodes', params: {
+    post '/users/' + @user.username + '/repos/' + @repo.name + '/nodes', headers: @headers, params: {
       label: 'magazine',
       properties: {
         title: 'string',
@@ -228,12 +239,12 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         }]
       }
     }
-    res = JSON.parse(@response.body)
     assert_response :created
+    res = JSON.parse(@response.body)
     assert_equal 'magazine', res['label']
     assert_equal 4, res['properties'].count
     magazine_id = res['id']
-    post '/relationships', params: {
+    post '/users/' + @user.username + '/repos/' + @repo.name + '/relationships', headers: @headers, params: {
       rel_type: 'PUBLISHED',
       to: magazine_id,
       from: nodes(:author).id,
@@ -251,19 +262,19 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
 
     # # Bad requests
-    # post '/x/magazine', params: {
+    # post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
     #   properties: {
     #     # Should be string
     #     title: ['Cypher Weekly', 'Cypher Monthly']
     #   }
     # }
-    # post '/x/magazine', params: {
+    # post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
     #   properties: {
     #     # Should be [integer]
     #     years: 2015
     #   }
     # }
-    # post '/x/magazine', params: {
+    # post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
     #   properties: {
     #     image: {
     #       details: {
@@ -273,7 +284,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     #     }
     #   }
     # }
-    # post '/x/magazine', params: {
+    # post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
     #   properties: {
     #     image: {
     #       # Field does not exist
@@ -281,7 +292,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     #     }
     #   }
     # }
-    # post '/x/magazine', params: {
+    # post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
     #   properties: {
     #     # Should be [{image:string, urls: [string]}]
     #     related: {
@@ -290,7 +301,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     #     }
     #   }
     # }
-    # post '/x/magazine', params: {
+    # post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
     #   properties: {
     #     title: 'Cypher Weekly'
     #   },
@@ -307,7 +318,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     #     ]
     #   }
     # }
-    # post '/x/magazine', params: {
+    # post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
     #   properties: {
     #     title: 'Cypher Weekly'
     #   },
@@ -330,7 +341,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     # }
 
     # Create magazine instance
-    post '/x/magazine', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/magazine', params: {
       properties: {
         title: 'Cypher Weekly',
         years: [2015, 2016, 2017],
@@ -377,8 +388,8 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_not_nil res
     assert_not_nil res['properties']
     assert_not_nil res['properties']['image']
@@ -412,7 +423,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
 
     # Verify that data was stored
     query = @session.query
-                    .match('(n:magazine)<-[r:PUBLISHED]-()')
+                    .match('(n:`' + @user.username.downcase + '/' + @repo.name.downcase + ':magazine`)<-[r:PUBLISHED]-()')
                     .return(:n, :r).first
     magazine = query&.n
     assert_not_nil magazine
@@ -447,21 +458,21 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should create node reverse' do
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Hamlet',
         year: 1600
       }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Hamlet', res['properties']['title']
     assert_equal 1600, res['properties']['year']
-    assert_equal 'book', res['label']
+    assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':book', res['label']
 
     nid = res['nid']
 
-    post '/x/author', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/author', params: {
       properties: { name: 'Jon' },
       relationships: {
         out: [
@@ -475,14 +486,15 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jon', res['properties']['name']
-    assert_equal 'author', res['label']
+    assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':author', res['label']
 
     # Verify that data was stored
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Hamlet' })
                     .return(:a, :b).first
     author = query&.a
@@ -503,64 +515,64 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
 
   test 'should search' do
     (1..15).each do |i|
-      post '/x/book', params: {
+      post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
         properties: { title: 'Jungle Book ' + i.to_s, year: 1990 + i }
       }
       assert_response :success
     end
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: { title: 'Harry Potter', year: 2000 }
     }
     assert_response :success
 
     # Bad node
-    post '/x/badnode/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/badnode/search', params: {
       properties: { bad: 'node' }
     }
     assert_response :not_found
 
     # No properties
-    post '/x/book/search'
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search'
     assert_response :bad_request
 
     # Invalid property
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { invalid: 'property' }
     }
     assert_response :bad_request
 
     # Bad pagination value
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'harry' },
       page: 0
     }
     assert_response :bad_request
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'harry' },
       page: -1
     }
     assert_response :bad_request
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'harry' },
       page: 'one'
     }
     assert_response :bad_request
 
     # Search by title
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'harry' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 1, res.size
     assert_equal 'Harry Potter', res[0]['properties']['title']
 
     # Search by year
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { year: 2000 }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 2, res.size
     book_titles = []
     res.each do |book_json|
@@ -571,65 +583,65 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_equal true, book_titles.include?('Harry Potter')
 
     # Search by title and year
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'jungle', year: 1995 }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 1, res.size
     assert_equal 'Jungle Book 5', res[0]['properties']['title']
     assert_equal 1995, res[0]['properties']['year']
 
     # Pagination
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'jungle' },
       page: 1
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 10, res.size
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'jungle' },
       page: 2
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 5, res.size
 
     # No results
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { year: 199 }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 0, res.size
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'Harry Potter', year: 1995 }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 0, res.size
-    post '/x/book/search', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book/search', params: {
       properties: { title: 'harry' },
       page: 2
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 0, res.size
   end
 
   test 'should show node' do
     # Create Author
-    post '/x/author', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/author', params: {
       properties: { name: 'Jon' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jon', res['properties']['name']
-    assert_equal 'author', res['label']
+    assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':author', res['label']
     author_nid = res['nid']
     # Create Book
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Jungle Book',
         year: 1984
@@ -646,15 +658,15 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     book_nid = res['nid']
 
     # Get book
-    get '/x/book/' + book_nid.to_s
-    res = JSON.parse(@response.body)
+    get '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid.to_s
     assert_response :success
-    assert_equal 'book', res['label']
+    res = JSON.parse(@response.body)
+    assert_equal @user.username.downcase + '/' + @repo.name.downcase + ':book', res['label']
     assert_equal 1, res['relationships'].size
     rel = res['relationships'][0]
     assert_equal 'lead', rel['properties']['role']
@@ -665,39 +677,39 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
 
   test 'should update node' do
     # Create Author
-    post '/x/author', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/author', params: {
       properties: { name: 'Jon' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     author_nid = res['nid'].to_s
     # Create Book
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: { title: 'Jungle Book' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book', res['properties']['title']
     assert_nil res['properties']['year']
     book_nid = res['nid'].to_s
 
     # Bad node
-    put '/x/badnode/1', params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/badnode/1', params: {
       properties: { bad: 'node' }
     }
     assert_response :not_found
-    put '/x/book/999999999', params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/999999999', params: {
       properties: { year: 1984 }
     }
     assert_response :not_found
 
     # Bad property
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       properties: { invalid: 'property' }
     }
     assert_response :bad_request
     # Bad relationship
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -708,7 +720,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
       }
     }
     assert_response :bad_request
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -720,7 +732,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     }
     assert_response :bad_request
     # Bad relationship property
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -736,25 +748,25 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_response :bad_request
 
     # Add property to book
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       properties: { year: 1984 }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book', res['properties']['title']
     assert_equal 1984, res['properties']['year']
 
     # Update existing property of book
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       properties: { title: 'Jungle Book 2' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book 2', res['properties']['title']
     assert_equal 1984, res['properties']['year']
 
     # Add relationship to book
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -764,13 +776,14 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book 2', res['properties']['title']
     assert_equal 1984, res['properties']['year']
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Jungle Book 2' })
                     .return(:a, :b).first
     author = query&.a
@@ -784,7 +797,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_equal book.neo_id, author.rels[0].end_node_neo_id
 
     # Update relationship
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -797,13 +810,14 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book 2', res['properties']['title']
     assert_equal 1984, res['properties']['year']
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Jungle Book 2' })
                     .return(:a, :b).first
     author = query&.a
@@ -815,7 +829,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'lead', author.rels[0].props[:role]
 
     # Altogether now
-    put '/x/book/' + book_nid, params: {
+    put '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       properties: {
         title: 'Hamlet',
         year: 1600
@@ -832,13 +846,14 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Hamlet', res['properties']['title']
     assert_equal 1600, res['properties']['year']
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Hamlet' })
                     .return(:a, :b).first
     author = query&.a
@@ -852,14 +867,14 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
 
   test 'should destroy node' do
     # Create Author
-    post '/x/author', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/author', params: {
       properties: { name: 'Jon' }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     author_nid = res['nid'].to_s
     # Create Book and WROTE relationship
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Jungle Book',
         year: 1984
@@ -876,27 +891,27 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     book_nid = res['nid'].to_s
 
     # Bad node
-    delete '/x/badnode/1', params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/badnode/1', params: {
       properties: ['bad']
     }
     assert_response :not_found
-    delete '/x/book/999999999', params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/999999999', params: {
       properties: ['year']
     }
     assert_response :not_found
 
     # Bad property
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       properties: ['invalid']
     }
     assert_response :bad_request
     # Bad relationship
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -907,7 +922,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
       }
     }
     assert_response :bad_request
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -919,7 +934,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     }
     assert_response :bad_request
     # Bad relationship property
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -933,7 +948,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_response :bad_request
 
     # Remove property from relationship
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -944,13 +959,14 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book', res['properties']['title']
     assert_equal 1984, res['properties']['year']
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Jungle Book' })
                     .return(:a, :b).first
     author = query&.a
@@ -962,16 +978,17 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_nil author.rels[0].props[:role]
 
     # Remove property from book
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       properties: ['year']
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book', res['properties']['title']
     assert_nil res['properties']['year']
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(b: :book)
+                    .match(b: (prefix + 'book').to_sym)
                     .where(b: { title: 'Jungle Book' })
                     .return(:b).first
     book = query&.b
@@ -979,7 +996,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_nil book.props[:year]
 
     # Remove relationship
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       relationships: {
         in: [
           {
@@ -989,12 +1006,13 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book', res['properties']['title']
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Jungle Book' })
                     .return(:a, :b).first
     author = query&.a
@@ -1004,17 +1022,19 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, book.rels.size
 
     # Remove book
-    delete '/x/book/' + book_nid
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid
     assert_response :success
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author)
+                    .match(a: (prefix + 'author').to_sym)
                     .where(a: { name: 'Jon' })
                     .return(:a).first
     author = query&.a
     assert_not_nil author
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(b: :book)
+                    .match(b: (prefix + 'book').to_sym)
                     .where(b: { title: 'Jungle Book' })
                     .return(:b).first
     book = query&.b
@@ -1022,7 +1042,7 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
 
     # Altogether now
     # Create Book and WROTE relationship
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Jungle Book',
         year: 1984
@@ -1039,12 +1059,12 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       } # relationships
     } # params
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     book_nid = res['nid'].to_s
 
     # Remove property from relationship and book
-    delete '/x/book/' + book_nid, params: {
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid, params: {
       properties: ['year'],
       relationships: {
         in: [
@@ -1056,12 +1076,13 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
         ]
       }
     }
-    res = JSON.parse(@response.body)
     assert_response :success
+    res = JSON.parse(@response.body)
     assert_equal 'Jungle Book', res['properties']['title']
     assert_nil res['properties']['year']
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author, b: :book)
+                    .match(a: (prefix + 'author').to_sym, b: (prefix + 'book').to_sym)
                     .where(a: { name: 'Jon' }, b: { title: 'Jungle Book' })
                     .return(:a, :b).first
     author = query&.a
@@ -1074,17 +1095,19 @@ class GraphControllerTest < ActionDispatch::IntegrationTest
     assert_nil book.props[:year]
 
     # Remove book and relationships
-    delete '/x/book/' + book_nid
+    delete '/x/' + @user.username + '/' + @repo.name + '/book/' + book_nid
     assert_response :success
     # Get nodes
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(a: :author)
+                    .match(a: (prefix + 'author').to_sym)
                     .where(a: { name: 'Jon' })
                     .return(:a).first
     author = query&.a
     assert_not_nil author
+    prefix = @user.username.downcase + '/' + @repo.name.downcase + ':'
     query = @session.query
-                    .match(b: :book)
+                    .match(b: (prefix + 'book').to_sym)
                     .where(b: { title: 'Jungle Book' })
                     .return(:b).first
     book = query&.b

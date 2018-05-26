@@ -11,7 +11,14 @@ class ApplicationController < ActionController::API
     token = request.headers['Authorization']
     return head :unauthorized unless token
     @authed_user = User.find_by(token: token)
-    return head :unauthorized unless @authed_user
+    raise Unauthorized unless @authed_user
+  end
+
+  def assign_repo
+    user = User.find_by(username: params[:user_name])
+    raise NotFound if user.nil?
+    @repo = user.repos.where('lower(name) = ?', params[:repo_name].downcase).take
+    raise NotFound if @repo.nil?
   end
 
   private

@@ -4,7 +4,7 @@ class RepoTest < ActiveSupport::TestCase
   test 'validations' do
     lynx = users(:lynx)
     dolphin = users(:dolphin)
-    repo = repos(:movies)
+    repo = repos(:bookdb)
 
     # User
     assert_not repo.save, 'Saved Repo without user'
@@ -15,6 +15,8 @@ class RepoTest < ActiveSupport::TestCase
     name = repo.name
     repo.name = nil
     assert_not repo.save, 'Saved Repo without name'
+    repo.name = 'A Space'
+    assert_not repo.save, 'Saved Repo with invalid character'
     repo.name = name
     new_repo = Repo.new(name: name)
     new_repo.user = lynx

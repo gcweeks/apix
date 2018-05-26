@@ -2,16 +2,26 @@ require 'test_helper'
 
 class NodesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    book = nodes(:book)
-    book.properties << node_properties(:title)
-    book.properties << node_properties(:year)
-    book.save!
-    author = nodes(:author)
-    author.properties << node_properties(:name)
-    author.save!
+    @user = users(:lynx)
+    @user.password = 'SecurePa55word'
+    @user.generate_token
+    @user.save!
+    @headers = { 'Authorization' => @user.token }
+    @repo = repos(:bookdb)
+    @repo.user = @user
+    @repo.save!
+    @book = nodes(:book)
+    @book.repo = @repo
+    @book.properties << node_properties(:title)
+    @book.properties << node_properties(:year)
+    @book.save!
+    @author = nodes(:author)
+    @author.repo = @repo
+    @author.properties << node_properties(:name)
+    @author.save!
     wrote_rel = relationships(:wrote)
-    wrote_rel.to_node = book
-    wrote_rel.from_node = author
+    wrote_rel.to_node = @book
+    wrote_rel.from_node = @author
     wrote_rel.properties << relationship_properties(:role)
     wrote_rel.save!
 
@@ -20,22 +30,43 @@ class NodesControllerTest < ActionDispatch::IntegrationTest
     CypherHelper.session = @session
   end
 
-  test 'should index node template' do
+  test 'should index' do
     assert_equal 2, Node.all.count
-    get '/nodes'
+    get '/users/' + @user.username + '/repos/' + @repo.name + '/nodes'
     res = JSON.parse(@response.body)
     assert_equal 2, res.count
-    get '/nodes', params: { label: 'book' }
+    get '/users/' + @user.username + '/repos/' + @repo.name + '/nodes', params: { label: 'book' }
     res = JSON.parse(@response.body)
     assert_equal 'book', res['label']
   end
 
-  test 'should create node template' do
+  test 'should create' do
     Node.destroy_all
     assert_equal 0, Node.all.count
 
+    # Requires auth
+    post '/users/' + @user.username + '/repos/' + @repo.name + '/nodes', params: {
+      label: 'magazine',
+      properties: {
+        title: 'string',
+        years: ['integer'],
+        image: {
+          details: {
+            name: 'string',
+            urls: ['string']
+          },
+          format: 'string'
+        },
+        related: [{
+          image: 'string',
+          urls: ['string']
+        }]
+      }
+    }
+    assert_response :unauthorized
+
     # Create template
-    post '/nodes', params: {
+    post '/users/' + @user.username + '/repos/' + @repo.name + '/nodes', headers: @headers, params: {
       label: 'magazine',
       properties: {
         title: 'string',
@@ -83,34 +114,38 @@ class NodesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'string', related[0]['urls'][0]
   end
 
-  test 'should show node template' do
-    book = nodes(:book)
-    get '/nodes/' + book.id.to_s
+  test 'should show' do
+    get '/users/' + @user.username + '/repos/' + @repo.name + '/nodes/' + @book.id.to_s
     res = JSON.parse(@response.body)
     assert_response :success
-    assert_equal book.id, res['id']
+    assert_equal @book.id, res['id']
     assert_equal 'book', res['label']
   end
 
-  test 'should update node template' do
-    book = nodes(:book)
+  test 'should update' do
     # Create Books
-    post '/x/book', params: {
+    post '/x/' + @user.username + '/' + @repo.name + '/book', params: {
       properties: {
         title: 'Jungle Book',
         year: 1984
       }
     }
 
+    # Requires auth
+    put '/users/' + @user.username + '/repos/' + @repo.name + '/nodes/' + @book.id.to_s, params: {
+      label: 'novel'
+    }
+    assert_response :unauthorized
+
     # Update label
-    put '/nodes/' + book.id.to_s, params: {
+    put '/users/' + @user.username + '/repos/' + @repo.name + '/nodes/' + @book.id.to_s, headers: @headers, params: {
       label: 'novel'
     }
     res = JSON.parse(@response.body)
     assert_response :success
     assert_equal 'novel', res['label']
-    book.reload
-    assert_equal 'novel', book.label
+    @book.reload
+    assert_equal 'novel', @book.label
     # Verify that data was updated to reflect label change
     query = @session.query
                     .match(:n)
@@ -119,10 +154,11 @@ class NodesControllerTest < ActionDispatch::IntegrationTest
     node = query&.n
     assert_not_nil node
     assert_equal 'Jungle Book', node.props[:title]
-    assert_equal :novel, node.labels[0]
+    label = @user.username.downcase + '/' + @repo.name.downcase + ":novel"
+    assert_equal label.to_sym, node.labels[0]
 
     # Update property
-    put '/nodes/' + book.id.to_s, params: {
+    put '/users/' + @user.username + '/repos/' + @repo.name + '/nodes/' + @book.id.to_s, headers: @headers, params: {
       properties: {
         year: 'string'
       }
@@ -135,8 +171,8 @@ class NodesControllerTest < ActionDispatch::IntegrationTest
         break
       end
     end
-    book.reload
-    assert_equal 'string', book.properties.find_by(key: 'year').value_type
+    @book.reload
+    assert_equal 'string', @book.properties.find_by(key: 'year').value_type
     # Verify that data was updated to reflect label change
     query = @session.query
                     .match(:n)
@@ -149,13 +185,16 @@ class NodesControllerTest < ActionDispatch::IntegrationTest
     assert_nil node.props[:year]
   end
 
-  test 'should destroy node template' do
-    author = nodes(:author)
-    book = nodes(:book)
+  test 'should destroy' do
     assert_equal 2, Node.all.count
-    delete '/nodes/' + book.id.to_s
+
+    # Requires auth
+    delete '/users/' + @user.username + '/repos/' + @repo.name + '/nodes/' + @book.id.to_s
+    assert_response :unauthorized
+
+    delete '/users/' + @user.username + '/repos/' + @repo.name + '/nodes/' + @book.id.to_s, headers: @headers
     assert_response :success
     assert_equal 1, Node.all.count
-    assert_equal author.id, Node.all[0].id
+    assert_equal @author.id, Node.all[0].id
   end
 end

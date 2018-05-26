@@ -11,7 +11,11 @@ class User < ApplicationRecord
   has_secure_password
 
   # Validations
-  validates :username, presence: true, uniqueness: true
+  # TODO validate username across capitalizations
+  validates :username, presence: true, uniqueness: true, format: {
+    with: /\A[a-zA-Z0-9_-]+\z/,
+    message: 'only allows letters, numbers, and the - and _ characters'
+  }
   validates :email, presence: true, uniqueness: true, format: {
     with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i
   }
@@ -25,7 +29,7 @@ class User < ApplicationRecord
 
   def as_json(options = {})
     json = super({
-      except: [:token, :password_digest, :created_at, :updated_at]
+      except: %i(token password_digest created_at updated_at)
     }.merge(options))
     # Manually call as_json (implicitly) for fields that are models
     json['repos'] = repos
@@ -40,5 +44,9 @@ class User < ApplicationRecord
 
   def generate_token
     self.token = SecureRandom.base58(24)
+  end
+
+  def username_is(other_username)
+    username.downcase == other_username.downcase
   end
 end

@@ -50,7 +50,7 @@ module CypherHelper
   def self.create_node(node_label, properties, prop_types)
     # Build CREATE query
     # i.e. `CREATE (n:Person { name: "Johan", from: "Sweden" })`
-    cypher_str = '(n:' + node_label + ' {'
+    cypher_str = '(n:`' + node_label + '` {'
     properties.each do |key, value|
       value = TemplateHelper.format_type(value, prop_types[key])
       cypher_str += ' ' + key + ': ' + value + ','
@@ -191,8 +191,8 @@ module CypherHelper
   end
 
   def self.relationship_query(from_label, to_label, rel_type)
-    cypher_str = '(n:' + from_label + ')-[r:' + rel_type + ']->(n2:' +
-                 to_label + ')'
+    cypher_str = '(n:`' + from_label + '`)-[r:' + rel_type + ']->(n2:`' +
+                 to_label + '`)'
     @session.query.match(cypher_str)
   end
 
@@ -205,7 +205,7 @@ module CypherHelper
   end
 
   def self.add_all_nodes_update_label(query, old_label, new_label)
-    query.remove('n:' + old_label)
+    query.remove('n:`' + old_label + '`')
          .set(n: new_label)
   end
 

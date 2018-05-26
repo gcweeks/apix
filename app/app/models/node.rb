@@ -6,8 +6,13 @@ class Node < ApplicationRecord
            class_name: 'Relationship',
            foreign_key: :from_node_id
   has_many :properties, class_name: 'NodeProperty'
+  belongs_to :repo
 
-  validates :label, presence: true, uniqueness: true
+  validates :label, presence: true, uniqueness: { scope: :repo }, format: {
+    with: /\A[a-z0-9_-]+\z/,
+    message: 'only allows letters, numbers, and the - and _ characters'
+  }
+  validates :repo, presence: true
 
   def as_json(options = {})
     json = super({}.merge(options))
@@ -18,8 +23,19 @@ class Node < ApplicationRecord
     json
   end
 
+  def scoped_label
+    repo.user.username.downcase + '/' +
+      repo.name.downcase + ':' +
+      label
+  end
+
   def update_label(query, new_label)
-    query = CypherHelper.add_all_nodes_update_label(query, label, new_label)
+    new_scoped_label =
+      repo.user.username.downcase + '/' +
+      repo.name.downcase + ':' +
+      new_label
+    query = CypherHelper.add_all_nodes_update_label(query, scoped_label,
+                                                    new_scoped_label)
     self.label = new_label
     query
   end

@@ -2,14 +2,22 @@ class GraphController < ApplicationController
   include GraphHelper
   include ErrorHelper
 
+  before_action :assign_repo
+
+  # GET /x/:user_name/:repo_name/:node_label
   def index
-    query = CypherHelper.get_nodes(params[:node_label])
+    scoped_label =
+      @repo.user.username.downcase + '/' +
+      @repo.name.downcase + ':' +
+      params[:node_label]
+    query = CypherHelper.get_nodes(scoped_label)
     node_struct_arr = CypherHelper.add_relationships(query).return(:n, :r)
     render json: format_nodes(node_struct_arr), status: :ok
   end
 
+  # POST /x/:user_name/:repo_name/:node_label
   def create
-    node = Node.find_by(label: params[:node_label])
+    node = @repo.nodes.find_by(label: params[:node_label])
     raise NotFound unless node
 
     # Properties
@@ -21,7 +29,7 @@ class GraphController < ApplicationController
     props = TemplateHelper.validate_props(props, node)
     prop_types = TemplateHelper.get_prop_types(props, node)
     # Start building CREATE query
-    query = CypherHelper.create_node(node.label, props, prop_types)
+    query = CypherHelper.create_node(node.scoped_label, props, prop_types)
 
     # Relationships
     rel = params[:relationships]
@@ -31,12 +39,12 @@ class GraphController < ApplicationController
     else
       node_struct = query.return(:n).first
     end
-
     render json: format_node(node_struct), status: :ok
   end
 
+  # POST /x/:user_name/:repo_name/:node_label/search
   def search
-    node = Node.find_by(label: params[:node_label])
+    node = @repo.nodes.find_by(label: params[:node_label])
     raise NotFound if node.blank?
     if params[:properties].blank? || !params[:properties].respond_to?('each') ||
        params[:properties].to_unsafe_h.size.zero?
@@ -49,13 +57,14 @@ class GraphController < ApplicationController
     props = TemplateHelper.validate_props(props, node)
     prop_types = TemplateHelper.get_prop_types(props, node)
     props.each { |k, v| props[k] = v.to_s }
-    node_struct_arr = CypherHelper.search(params[:node_label],
+    node_struct_arr = CypherHelper.search(node.scoped_label,
                                           props,
                                           prop_types,
                                           page).return(:n, :r)
     render json: format_nodes(node_struct_arr), status: :ok
   end
 
+  # GET /x/:user_name/:repo_name/:node_label/:id
   def show
     node_id = params[:id].to_i.to_s
     raise BadRequest.new(id: 'invalid') if node_id != params[:id]
@@ -65,10 +74,11 @@ class GraphController < ApplicationController
     render json: format_node(node_struct), status: :ok
   end
 
+  # PATCH/PUT /x/:user_name/:repo_name/:node_label/:id
   def update
     node_id = params[:id].to_i.to_s
     raise BadRequest.new(id: 'invalid') if node_id != params[:id]
-    node = Node.find_by(label: params[:node_label])
+    node = @repo.nodes.find_by(label: params[:node_label])
     raise NotFound if node.nil?
     query = CypherHelper.get_node(node_id)
     node_instance = query.return(:n).first
@@ -99,10 +109,11 @@ class GraphController < ApplicationController
     render json: format_node(node_struct), status: :ok
   end
 
+  # DELETE /x/:user_name/:repo_name/:node_label/:id
   def destroy
     node_id = params[:id].to_i.to_s
     raise BadRequest.new(id: 'invalid') if node_id != params[:id]
-    node = Node.find_by(label: params[:node_label])
+    node = @repo.nodes.find_by(label: params[:node_label])
     raise NotFound if node.nil?
     query = CypherHelper.get_node(node_id)
     node_instance = query.return(:n).first

@@ -3,18 +3,21 @@ class NodesController < ApplicationController
   include ErrorHelper
   include TemplateHelper
 
+  before_action :restrict_access, only: %i(create update destroy)
+  before_action :assign_repo
+
+  # GET /users/:user_name/repos/:repo_name/nodes
   def index
-    if params[:label].blank?
-      nodes = Node.all
-      return render json: nodes, status: :ok
-    end
-    node = Node.find_by(label: params[:label])
+    return render json: @repo.nodes, status: :ok if params[:label].blank?
+    node = @repo.nodes.find_by(label: params[:label])
     raise NotFound if node.nil?
     render json: node, status: :ok
   end
 
+  # POST /users/:user_name/repos/:repo_name/nodes
   def create
-    node = Node.new(label: params[:label])
+    node = Node.new(label: params[:label].downcase)
+    node.repo = @repo
     raise BadRequest.new(node.errors) if node.invalid?
     if params[:properties].present? && params[:properties].respond_to?('each')
       props_json = params[:properties].to_unsafe_h
@@ -37,17 +40,19 @@ class NodesController < ApplicationController
     render json: node, status: :created
   end
 
+  # GET /users/:user_name/repos/:repo_name/nodes/:id
   def show
-    node = Node.find_by(id: params[:id])
+    node = @repo.nodes.find_by(id: params[:id])
     raise NotFound if node.nil?
     render json: node, status: :ok
   end
 
+  # PATCH/PUT /users/:user_name/repos/:repo_name/nodes/:id
   def update
-    node = Node.find_by(id: params[:id])
+    node = @repo.nodes.find_by(id: params[:id])
     raise NotFound if node.nil?
 
-    query = CypherHelper.node_query(node.label)
+    query = CypherHelper.node_query(node.scoped_label)
     # Keep track of if we need to execute this query
     needs_query = false
     if params[:label].present? && params[:label] != node.label
@@ -83,11 +88,12 @@ class NodesController < ApplicationController
     render json: node, status: :ok
   end
 
+  # DELETE /users/:user_name/repos/:repo_name/nodes/:id
   def destroy
-    node = Node.find_by(id: params[:id])
+    node = @repo.nodes.find_by(id: params[:id])
     raise NotFound if node.nil?
 
-    query = CypherHelper.node_query(node.label)
+    query = CypherHelper.node_query(node.scoped_label)
 
     # Destroy all instances. This call will also destroy the template itself
     # when done.
