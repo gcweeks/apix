@@ -42,8 +42,12 @@ end
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 # Neo4j for graph, postgres for templates
-gem 'neo4j', '~> 8.0.0'
+gem 'neo4j', '~> 9.2.4'
+gem 'neo4j-rake_tasks', '~> 0.7.19'
 gem 'pg', '0.18.4'
 
 # JWT for Auth0
 gem 'jwt'
+
+# Bug in 5.11 where one test failure stops running all tests
+gem 'minitest', '~> 5.10.3'

@@ -59,9 +59,15 @@ When you're ready to stop the server, type:
 
 ```vagrant halt```
 
-## Manual Method
+## Manual Method (Ubuntu)
 
 If you don't want to use Vagrant, you can set up your local environment with everything needed to run the app including Rails, Postgres, and Neo4j.
+
+To setup Java
+
+```
+sudo apt install openjdk-8-jdk
+```
 
 To setup Postgres
 
@@ -74,7 +80,7 @@ sudo -u postgres psql
 # \q
 ```
 
-Installing gems
+To install gems
 
 ```
 bundle
@@ -89,6 +95,14 @@ rails neo4j:start[development]
 rails neo4j:install[community-latest,test]
 rails neo4j:config[test,7575]
 rails neo4j:start[test]
+```
+
+Set all hostnames to localhost by adding the following to your `/etc/hosts` file:
+
+```
+127.0.0.1       postgres
+127.0.0.1       neo4j
+127.0.0.1       neo4j-test
 ```
 
 Create postgres dbs, migrate schema, and populate with seeds.rb
