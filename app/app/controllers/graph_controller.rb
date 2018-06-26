@@ -150,7 +150,9 @@ class GraphController < ApplicationController
       rescue Neo4j::Session::CypherError => e
         # Relationship won't be found if we deleted it, so check if that's the
         # case, and return just the node if so.
-        raise InternalServerError unless e.message == 'Relationship not found'
+        unless e.message == 'Relationship not found' || e.message.include?('Unable to load RELATIONSHIP')
+          raise InternalServerError 
+        end
         node_struct = query.return(:n).first
       end
     else

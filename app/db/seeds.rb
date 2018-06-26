@@ -3,20 +3,20 @@ require 'csv'
 session = Neo4j::Session.open(:server_db, 'http://neo4j:7474')
 session.query('MATCH (n) DETACH DELETE n')
 
-movie_name = NodeProperty.create(key: 'name', value_type: 'string')
-movie = Node.new(label: 'movie')
-movie.properties << movie_name
-movie.save!
+# movie_name = NodeProperty.create(key: 'name', value_type: 'string')
+# movie = Node.new(label: 'movie')
+# movie.properties << movie_name
+# movie.save!
 
-director_name = NodeProperty.create(key: 'name', value_type: 'string')
-director = Node.new(label: 'director')
-director.properties << director_name
-director.save!
+# director_name = NodeProperty.create(key: 'name', value_type: 'string')
+# director = Node.new(label: 'director')
+# director.properties << director_name
+# director.save!
 
-rel_directed = Relationship.new(rel_type: 'DIRECTED')
-rel_directed.from_node = director
-rel_directed.to_node = movie
-rel_directed.save!
+# rel_directed = Relationship.new(rel_type: 'DIRECTED')
+# rel_directed.from_node = director
+# rel_directed.to_node = movie
+# rel_directed.save!
 
 # TODO: Implement
 # CSV.foreach('db/movies.csv') do |row|
