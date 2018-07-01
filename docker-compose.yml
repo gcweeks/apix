@@ -2,7 +2,7 @@ version: "3"
 services:
   web:
     build: .
-    command: bash -c "./wait-for-it.sh neo4j:7474 -- bundle install; bundle exec rails s"
+    command: bash -c "./wait-for-it.sh neo4j:7474 -- gem install bundler; bundle install; bundle exec rails s"
     volumes:
       - ./app:/app
     ports:
@@ -20,14 +20,14 @@ services:
     tty: true
 
   postgres:
-    image: postgres:9.6-alpine
+    image: postgres:10.4-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: apix
       POSTGRES_DB: apixdb
 
   neo4j:
-    image: neo4j:3.2
+    image: neo4j:3.4
     restart: unless-stopped
     ports:
       - "7474:7474"

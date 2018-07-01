@@ -2,7 +2,7 @@ version: "3"
 services:
   web-test:
     build: .
-    command: bash -c "./wait-for-it.sh neo4j-test:7474 -- bundle install; bundle exec rails t"
+    command: bash -c "./wait-for-it.sh neo4j-test:7474 -- gem install bundler; bundle install; rails db:migrate:reset; bundle exec rails t"
     volumes:
       - ./app:/app
     links:
@@ -15,9 +15,10 @@ services:
       RDS_PASSWORD: 789789
       RDS_HOSTNAME: postgres
       RDS_PORT: 5432
+      RAILS_ENV: test
 
   neo4j-test:
-    image: neo4j:3.2
+    image: neo4j:3.4
     restart: unless-stopped
     environment:
       NEO4J_AUTH: none
