@@ -1,18 +1,10 @@
-class Node < ApplicationRecord
+class Node < AbstractNode
   has_many :in_relationships,
            class_name: 'Relationship',
            foreign_key: :to_node_id
   has_many :out_relationships,
            class_name: 'Relationship',
            foreign_key: :from_node_id
-  has_many :properties, class_name: 'NodeProperty'
-  belongs_to :repo
-
-  validates :label, presence: true, uniqueness: { scope: :repo }, format: {
-    with: /\A[a-z0-9_-]+\z/,
-    message: 'only allows letters, numbers, and the - and _ characters'
-  }
-  validates :repo, presence: true
 
   def as_json(options = {})
     json = super({}.merge(options))

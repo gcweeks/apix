@@ -28,6 +28,7 @@ Rails.application.routes.draw do
     resources :repos, param: :name do
       resources :nodes
       resources :relationships
+      resources :interfaces
     end
   end
 end

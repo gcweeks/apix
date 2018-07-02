@@ -12,7 +12,7 @@ class UserTest < ActiveSupport::TestCase
     assert_not user.save, 'Saved User without password'
     password = 'verySecurePa55word'
     user.password = password
-    assert user.save, 'Couldn\'t save valid User'
+    assert user.save, "Couldn't save valid User"
     user.reload
     user.password = 'short'
     assert_not user.save, 'Saved User with short password'

@@ -113,7 +113,7 @@ class ApiController < ApplicationController
 
   # POST /reset
   def reset
-    Node.all.each(&:destroy)
+    AbstractNode.all.each(&:destroy) # Nodes and Interfaces
     NodeProperty.all.each(&:destroy)
     Relationship.all.each(&:destroy)
     RelationshipProperty.all.each(&:destroy)

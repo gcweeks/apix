@@ -1,5 +1,7 @@
 author:
+  type: 'Node'
   label: 'author'
 
 book:
+  type: 'Node'
   label: 'book'

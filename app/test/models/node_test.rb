@@ -9,7 +9,7 @@ class NodeTest < ActiveSupport::TestCase
     # Repo
     assert_not author.save, 'Saved Node without repo'
     repo.user = lynx
-    assert repo.save, 'Couldn\'t save valid Repo'
+    assert repo.save, "Couldn't save valid Repo"
     author.repo = repo
     assert author.save, "Couldn't save valid Node"
 
@@ -20,6 +20,7 @@ class NodeTest < ActiveSupport::TestCase
     author.label = 'author'
     author.save!
 
+    # Duplicates
     new_author = Node.new(label: 'author')
     assert_not new_author.save, 'Saved Node with duplicate label'
   end

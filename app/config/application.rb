@@ -39,6 +39,7 @@ module Apix
     config.api_only = true
 
     config.autoload_paths << Rails.root.join('lib')
+    config.autoload_paths += %W(#{config.root}/app/models/abstract_nodes)
 
     config.middleware.insert_before 0, Rack::Cors do
       allow do

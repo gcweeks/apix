@@ -9,7 +9,7 @@ class RepoTest < ActiveSupport::TestCase
     # User
     assert_not repo.save, 'Saved Repo without user'
     repo.user = lynx
-    assert repo.save, 'Couldn\'t save valid Repo'
+    assert repo.save, "Couldn't save valid Repo"
 
     # Name
     name = repo.name
@@ -22,6 +22,6 @@ class RepoTest < ActiveSupport::TestCase
     new_repo.user = lynx
     assert_not new_repo.save, 'Saved Repo with duplicate name for User'
     new_repo.user = dolphin
-    assert new_repo.save, 'Couldn\'t save valid Repo'
+    assert new_repo.save, "Couldn't save valid Repo"
   end
 end

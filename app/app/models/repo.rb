@@ -1,5 +1,6 @@
 class Repo < ApplicationRecord
   has_many :nodes
+  has_many :interfaces
   belongs_to :user
 
   validates :name, presence: true, uniqueness: { scope: :user }, format: {
