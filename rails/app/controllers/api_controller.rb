@@ -6,7 +6,7 @@ class ApiController < ApplicationController
 
   # GET /
   def version
-    render json: { 'version' => '0.2.1' }, status: :ok
+    render json: { 'version' => '0.2.2' }, status: :ok
   end
 
   # GET /test
