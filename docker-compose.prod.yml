@@ -55,7 +55,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./app:/app
+      - ./rails:/rails
     links:
       - postgres
       - neo4j

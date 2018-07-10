@@ -4,7 +4,7 @@ services:
     build: .
     command: bash -c "./wait-for-it.sh neo4j:7474 -- gem install bundler; bundle install; bundle exec rails s"
     volumes:
-      - ./app:/app
+      - ./rails:/rails
     ports:
       - "80:3000"
     links:

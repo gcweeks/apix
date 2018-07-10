@@ -3,11 +3,11 @@ FROM ruby:2.5
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get -y install software-properties-common apt-utils nodejs build-essential
 
-RUN mkdir /app
-WORKDIR /app
+RUN mkdir /rails
+WORKDIR /rails
 
-COPY ./app/Gemfile app/Gemfile.lock ./
+COPY ./rails/Gemfile ./rails/Gemfile.lock ./
 
 RUN bundle install -j 20
 
-COPY ./app ./
+COPY ./rails ./

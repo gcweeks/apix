@@ -4,7 +4,7 @@ services:
     build: .
     command: bash -c "./wait-for-it.sh neo4j-test:7474 -- gem install bundler; bundle install; rails db:migrate:reset; bundle exec rails t"
     volumes:
-      - ./app:/app
+      - ./rails:/rails
     links:
       - neo4j-test
     external_links:
