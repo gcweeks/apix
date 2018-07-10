@@ -22,8 +22,10 @@ Rails.application.routes.draw do
     end
   end
 
-  get 'me' => 'users#show_me'
-  put 'me' => 'users#update_me'
+  get  'me' => 'users#show_me'
+  put  'me' => 'users#update_me'
+  get  'preferences' => 'users#get_prefs'
+  post 'preferences' => 'users#set_prefs'
   resources :users, except: %i(index), param: :name do
     resources :repos, param: :name do
       resources :nodes

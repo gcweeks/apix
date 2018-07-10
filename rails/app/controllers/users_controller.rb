@@ -1,7 +1,6 @@
 class UsersController < ApplicationController
-  before_action :restrict_access, only: %i(show_me update_me)
-  # 'create' is obviously unrestricted
-
+  before_action :restrict_access, except: %i(create show)
+  
   # GET /me
   def show_me
     render json: @authed_user, status: :ok
@@ -13,6 +12,21 @@ class UsersController < ApplicationController
       raise UnprocessableEntity.new(@authed_user.errors)
     end
     render json: @authed_user, status: :ok
+  end
+
+  # GET /preferences
+  def get_prefs
+    render json: @authed_user.preferences, status: :ok
+  end
+
+  # POST /preferences
+  def set_prefs
+    # Set preferences
+    @authed_user.preferences = params
+    # Save and check for validation errors
+    raise UnprocessableEntity.new(@authed_user.errors) unless @authed_user.save
+    # Send User's new preferences
+    render json: @authed_user.preferences, status: :ok
   end
 
   # POST /users

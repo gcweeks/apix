@@ -63,6 +63,41 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test 'should get prefs' do
+    @user.preferences = {
+      hello: 'world'
+    }
+    @user.save
+
+    # Requires auth
+    get '/preferences'
+    assert_response :unauthorized
+
+    get '/preferences', headers: @headers
+    assert_response :success
+
+    # Check Response
+    res = JSON.parse(@response.body)
+    assert_equal res['hello'], 'world'
+    assert_equal res, @user.preferences
+  end
+
+  test 'should set prefs' do
+    # Requires auth
+    post '/preferences'
+    assert_response :unauthorized
+
+    post '/preferences', headers: @headers, params: {
+      key: 'value'
+    }
+    assert_response :success
+
+    res = JSON.parse(@response.body)
+    assert_equal res['key'], 'value'
+    @user.reload
+    assert_equal res, @user.preferences
+  end
+
   test 'should create' do
     new_username = 'newbie'
     new_email = 'new@email.com'
