@@ -39,7 +39,7 @@ group :development do
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+# gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 # Neo4j for graph, postgres for templates
 gem 'neo4j', '~> 9.2.4'
@@ -51,3 +51,6 @@ gem 'jwt'
 
 # Bug in 5.11 where one test failure stops running all tests
 gem 'minitest', '~> 5.10.3'
+
+# GraphQL
+gem 'graphql'

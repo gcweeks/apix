@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  post '/graphql', to: 'graphql#execute'
   root 'api#version'
 
   get  'test'    => 'api#request_get'
