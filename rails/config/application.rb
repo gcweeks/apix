@@ -48,5 +48,10 @@ module Apix
                       methods: %i(get put patch post options delete)
       end
     end
+
+    logger           = ActiveSupport::Logger.new(STDOUT)
+    logger.formatter = config.log_formatter
+    config.log_tags  = [:subdomain, ->(request) { request.headers['User-Agent'] }]
+    config.logger    = ActiveSupport::TaggedLogging.new(logger)
   end
 end
