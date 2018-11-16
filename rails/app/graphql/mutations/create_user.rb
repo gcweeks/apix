@@ -1,23 +1,19 @@
-class Mutations::CreateUser < GraphQL::Schema::RelayClassicMutation
+class Mutations::CreateUser < Mutations::BaseMutation
   null true
 
-  argument :username, String, required: true
-  argument :fname, String, required: true
-  argument :lname, String, required: true
-  argument :email, String, required: true
-  argument :password, String, required: true
+  argument :attributes, Types::UserAttributes, required: true
 
   field :user, Types::UserType, null: true
   field :errors, [String], null: false
 
-  def resolve(username:, fname:, lname:, email:, password:)
+  def resolve(attributes:)
     # Create new User
     user = User.new
-    user.username = username
-    user.fname = fname
-    user.lname = lname
-    user.email = email
-    user.password = password
+    user.username = attributes.username
+    user.fname = attributes.fname
+    user.lname = attributes.lname
+    user.email = attributes.email
+    user.password = attributes.password
     # Generate the User's auth token
     user.generate_token
     # Save and check for validation errors
