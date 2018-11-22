@@ -11,6 +11,7 @@ class Types::UserType < Types::BaseObject
     argument :id, String, required: false, default_value: nil
     argument :name, String, required: false, default_value: nil
   end
+  field :preferences, String, null: false
 
   def repo(id:, name:)
     if id.present?

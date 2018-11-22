@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
   before_action :restrict_access, except: %i(create show)
-  
+
   # GET /me
   def show_me
     render json: @authed_user, status: :ok
