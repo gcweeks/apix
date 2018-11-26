@@ -3,5 +3,5 @@ class Types::UserAttributes < Types::BaseInputObject
   argument :fname,       String, required: false
   argument :lname,       String, required: false
   argument :email,       String, required: false
-  argument :preferences, String, required: false
+  argument :preferences, Types::JSON, required: false
 end
