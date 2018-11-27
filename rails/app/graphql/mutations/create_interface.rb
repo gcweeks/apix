@@ -1,8 +1,8 @@
 class Mutations::CreateInterface < Mutations::BaseMutation
   null true
 
-  argument :attributes, Types::InterfaceAttributes, required: true
   argument :reponame, String, required: true
+  argument :attributes, Types::InterfaceAttributes, required: true
 
   field :interface, Types::InterfaceType, null: true
   field :errors, [String], null: false

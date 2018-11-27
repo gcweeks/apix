@@ -1,9 +1,9 @@
 class Mutations::UpdateRelationship < Mutations::BaseMutation
   null true
 
-  argument :attributes, Types::RelationshipAttributes, required: true
   argument :reponame, String, required: true
   argument :id, ID, required: true
+  argument :attributes, Types::RelationshipAttributes, required: true
 
   field :relationship, Types::RelationshipType, null: true
   field :errors, [String], null: false

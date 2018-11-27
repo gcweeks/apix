@@ -1,8 +1,8 @@
 class Mutations::UpdateRepo < Mutations::BaseMutation
   null true
 
-  argument :attributes, Types::RepoAttributes, required: true
   argument :reponame, String, required: true
+  argument :attributes, Types::RepoAttributes, required: true
 
   field :repo, Types::RepoType, null: true
   field :errors, [String], null: false

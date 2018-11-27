@@ -1,8 +1,8 @@
 class Mutations::CreateNode < Mutations::BaseMutation
   null true
 
-  argument :attributes, Types::NodeAttributes, required: true
   argument :reponame, String, required: true
+  argument :attributes, Types::NodeAttributes, required: true
 
   field :node, Types::NodeType, null: true
   field :errors, [String], null: false

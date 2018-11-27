@@ -1,10 +1,10 @@
 class Mutations::CreateRelationship < Mutations::BaseMutation
   null true
 
-  argument :attributes, Types::RelationshipAttributes, required: true
   argument :reponame, String, required: true
+  argument :attributes, Types::RelationshipAttributes, required: true
 
-  field :repo, Types::InterfaceType, null: true
+  field :relationship, Types::RelationshipType, null: true
   field :errors, [String], null: false
 
   def resolve(attributes:, reponame:)

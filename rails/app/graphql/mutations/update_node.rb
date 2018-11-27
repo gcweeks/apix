@@ -1,9 +1,9 @@
 class Mutations::UpdateNode < Mutations::BaseMutation
   null true
 
-  argument :attributes, Types::NodeAttributes, required: true
   argument :reponame, String, required: true
   argument :id, ID, required: true
+  argument :attributes, Types::NodeAttributes, required: true
 
   field :node, Types::NodeType, null: true
   field :errors, [String], null: false

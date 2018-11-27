@@ -1,5 +1,4 @@
 class Types::UserType < Types::BaseObject
-  description 'A user'
   field :id, ID, null: false
   field :username, String, null: false
   field :fname, String, null: false
@@ -11,7 +10,7 @@ class Types::UserType < Types::BaseObject
     argument :id, String, required: false, default_value: nil
     argument :name, String, required: false, default_value: nil
   end
-  field :preferences, String, null: false
+  field :preferences, Types::JSON, null: false
 
   def repo(id:, name:)
     if id.present?

@@ -1,5 +1,4 @@
 class Types::RepoType < Types::BaseObject
-  description 'A repo'
   field :id, ID, null: false
   field :name, String, null: false
   field :user_id, ID, null: false
@@ -25,7 +24,7 @@ class Types::RepoType < Types::BaseObject
     end
   end
 
-  def node(id:, label:)
+  def interface(id:, label:)
     if id.present?
       @object.interfaces.find_by(id: id)
     elsif label.present?
