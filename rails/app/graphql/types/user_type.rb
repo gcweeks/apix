@@ -6,6 +6,7 @@ class Types::UserType < Types::BaseObject
   field :token, String, null: true
   field :email, String, null: false
   field :repos, [Types::RepoType, null: true], null: false
+  field :reposConnection, Types::RepoType.connection_type, null: false, hash_key: 'repos'
   field :repo, Types::RepoType, null: true do
     argument :id, String, required: false, default_value: nil
     argument :name, String, required: false, default_value: nil
