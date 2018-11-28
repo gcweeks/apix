@@ -29,8 +29,15 @@ class Mutations::DeleteNode < Mutations::BaseMutation
     end
 
     # Delete Node
+    query = CypherHelper.node_query(node.scoped_label)
+
+    # Destroy all instances. This call will also destroy the template itself
+    # when done.
+    node.destroy_instances(query).exec
+    node.destroy!
+
     {
-      errors: ['Not implemented']
+      errors: nil
     }
   end
 end

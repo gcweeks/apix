@@ -25,31 +25,71 @@ class Mutations::UpdateRelationship < Mutations::BaseMutation
       }
     end
 
-    relationship = repo.relationships.find_by(id: id)
-    if relationship.blank?
+    rel = Relationships.find_by(id: id) # TODO refine
+    if rel.blank?
       return {
         relationship: nil,
         errors: ['Relationship ' + id + ' not found']
       }
     end
 
-    # Update Relationship
-    attributes.each do |attribute|
-      relationship[attribute[0]] = attribute[1]
+    query = CypherHelper.relationship_query(
+      rel.from_node.scoped_label,
+      rel.to_node.scoped_label,
+      rel.rel_type)
+    needs_query = false
+    rel_type = attributes.rel_type.upcase
+    props = attributes.properties
+
+    # Update rel
+    if rel_type.present? && rel_type != rel.rel_type
+      query = rel.update_rel_type(query, rel_type)
+      needs_query = true
+    end
+    if props.present?
+      # Validate properties
+      props.each { |_k, vt| TemplateHelper.validate_type(vt) }
+      # Store validated properties as new RelationshipProperty instances
+      new_props = []
+      props.each do |key, value_type|
+        existing_prop = rel.properties.find_by(key: key)
+        if existing_prop.nil?
+          value_type = value_type.to_s
+          property = RelationshipProperty.new(key: key, value_type: value_type)
+          raise BadRequest.new(property.errors) if property.invalid?
+          new_props << property
+        elsif existing_prop.value_type != value_type
+          if value_type.nil?
+            query = rel.destroy_property(query, property)
+            property.destroy!
+          else
+            query = rel.update_prop_type(query, existing_prop, value_type)
+            existing_prop.save!
+          end
+          needs_query = true
+        end
+      end
+      # No validation issues, add new properties to rel
+      new_props.each do |prop|
+        prop.save!
+        rel.properties << prop
+      end
     end
 
     # Save and check for validation errors
-    if relationship.save
+    if rel.save
+      query.exec if needs_query
+
       # Successful creation, return the created object with no errors
       {
-        relationship: relationship,
+        relationship: rel,
         errors: []
       }
     else
       # Failed save, return the errors to the client
       {
         relationship: nil,
-        errors: relationship.errors.full_messages
+        errors: rel.errors.full_messages
       }
     end
   end

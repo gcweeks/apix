@@ -37,24 +37,40 @@ class Mutations::CreateRelationship < Mutations::BaseMutation
       }
     end
 
-    # Create new Repo
-    relationship = Relationship.new(rel_type: attributes.rel_type)
-    relationship.to_node = to
-    relationship.from_node = from
-    # TODO Properties
+    # Create new Relationship
+    rel = Relationship.new(rel_type: attributes.rel_type.upcase)
+    rel.to_node = to
+    rel.from_node = from
+    if attributes.properties.present?
+      # Validate properties
+      attributes.properties.each { |_k, vt| TemplateHelper.validate_type(vt) }
+      # Store validated properties as new NodeProperty instances
+      new_props = []
+      attributes.properties.each do |key, value_type|
+        value_type = value_type.to_s
+        property = RelationshipProperty.new(key: key, value_type: value_type)
+        raise BadRequest.new(property.errors) if property.invalid?
+        new_props << property
+      end
+      # No validation issues, add new properties to rel
+      new_props.each do |prop|
+        prop.save!
+        rel.properties << prop
+      end
+    end
 
     # Save and check for validation errors
-    if relationship.save
+    if rel.save
       # Successful creation, return the created object with no errors
       {
-        relationship: relationship,
+        relationship: rel,
         errors: []
       }
     else
       # Failed save, return the errors to the client
       {
         relationship: nil,
-        errors: relationship.errors.full_messages
+        errors: rel.errors.full_messages
       }
     end
   end

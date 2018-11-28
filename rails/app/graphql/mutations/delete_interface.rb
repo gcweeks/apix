@@ -29,8 +29,10 @@ class Mutations::DeleteInterface < Mutations::BaseMutation
     end
 
     # Delete Interface
+    interface.destroy!
+
     {
-      errors: ['Not implemented']
+      errors: nil
     }
   end
 end

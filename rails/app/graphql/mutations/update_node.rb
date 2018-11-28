@@ -33,13 +33,50 @@ class Mutations::UpdateNode < Mutations::BaseMutation
       }
     end
 
-    # Update Node
-    attributes.each do |attribute|
-      node[attribute[0]] = attribute[1]
+    query = CypherHelper.node_query(node.scoped_label)
+    needs_query = false
+    label = attributes.label.downcase
+    props = attributes.properties
+
+    # Update node
+    if label.present? && label != node.label
+      query = node.update_label(query, label)
+      needs_query = true
+    end
+    if props.present?
+      # Validate properties
+      props.each { |_k, vt| TemplateHelper.validate_type(vt) }
+      # Store validated properties as new NodeProperty instances
+      new_props = []
+      props.each do |key, value_type|
+        existing_prop = node.properties.find_by(key: key)
+        if existing_prop.nil?
+          value_type = value_type.to_s
+          property = NodeProperty.new(key: key, value_type: value_type)
+          raise BadRequest.new(property.errors) if property.invalid?
+          new_props << property
+        elsif existing_prop.value_type != value_type
+          if value_type.nil?
+            query = node.destroy_property(query, property)
+            property.destroy!
+          else
+            query = node.update_prop_type(query, existing_prop, value_type)
+            existing_prop.save!
+          end
+          needs_query = true
+        end
+      end
+      # No validation issues, add new properties to node
+      new_props.each do |prop|
+        prop.save!
+        node.properties << prop
+      end
     end
 
     # Save and check for validation errors
     if node.save
+      query.exec if needs_query
+
       # Successful creation, return the created object with no errors
       {
         node: node,

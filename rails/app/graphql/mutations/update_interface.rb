@@ -33,9 +33,37 @@ class Mutations::UpdateInterface < Mutations::BaseMutation
       }
     end
 
-    # Update Interface
-    attributes.each do |attribute|
-      interface[attribute[0]] = attribute[1]
+    label = attributes.label.downcase
+    props = attributes.properties
+
+    # Update interface
+    interface.label = label if label.present?
+    if props.present?
+      # Validate properties
+      props.each { |_k, vt| TemplateHelper.validate_type(vt) }
+      # Store validated properties as new NodeProperty instances
+      new_props = []
+      props.each do |key, value_type|
+        existing_prop = interface.properties.find_by(key: key)
+        if existing_prop.nil?
+          value_type = value_type.to_s
+          property = NodeProperty.new(key: key, value_type: value_type)
+          raise BadRequest.new(property.errors) if property.invalid?
+          new_props << property
+        elsif existing_prop.value_type != value_type
+          if value_type.nil?
+            property.destroy!
+          else
+            existing_prop.value_type = value_type
+            existing_prop.save!
+          end
+        end
+      end
+      # No validation issues, add new properties to interface
+      new_props.each do |prop|
+        prop.save!
+        interface.properties << prop
+      end
     end
 
     # Save and check for validation errors

@@ -24,9 +24,26 @@ class Mutations::CreateNode < Mutations::BaseMutation
       }
     end
 
-    # Create new Repo
+    # Create new Node
     node = Node.new(label: attributes.label.downcase)
-    # TODO Properties
+    node.repo = repo
+    if attributes.properties.present?
+      # Validate properties
+      attributes.properties.each { |_k, vt| TemplateHelper.validate_type(vt) }
+      # Store validated properties as new NodeProperty instances
+      new_props = []
+      attributes.properties.each do |key, value_type|
+        value_type = value_type.to_s
+        property = NodeProperty.new(key: key, value_type: value_type)
+        raise BadRequest.new(property.errors) if property.invalid?
+        new_props << property
+      end
+      # No validation issues, add new properties to node
+      new_props.each do |prop|
+        prop.save!
+        node.properties << prop
+      end
+    end
 
     # Save and check for validation errors
     if node.save
