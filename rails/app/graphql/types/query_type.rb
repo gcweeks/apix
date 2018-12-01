@@ -1,4 +1,6 @@
 class Types::QueryType < Types::BaseObject
+  field :version, String, null: true
+
   field :user, Types::UserType, null: true do
     argument :username, String, required: true
   end
@@ -24,6 +26,10 @@ class Types::QueryType < Types::BaseObject
     argument :username, String, required: true
     argument :reponame, String, required: true
     argument :id, ID, required: true
+  end
+
+  def version
+    '0.3.0'
   end
 
   def user(username:)

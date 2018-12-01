@@ -5,9 +5,7 @@ class GraphqlController < ApplicationController
     operation_name = params[:operationName]
 
     token = request.authorization
-    # return head :unauthorized unless token
     current_user = User.find_by(token: token)
-    # raise Unauthorized unless @authed_user
 
     context = { current_user: current_user }
     result = ApixSchema.execute(
