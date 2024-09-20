@@ -96,14 +96,14 @@ GEM
       rake
       ruby-progressbar
       rubyzip (>= 1.1.7)
-    nio4r (2.7.0)
+    nio4r (2.7.3)
     nokogiri (1.16.5)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     orm_adapter (0.5.0)
     os (1.0.1)
     pg (0.18.4)
-    puma (5.6.8)
+    puma (5.6.9)
       nio4r (~> 2.0)
     racc (1.7.3)
     rack (2.2.8.1)
